@@ -55,9 +55,9 @@ app.post("/create_preferences", async (req, res) => {
     };
     const preferences = new Preference(client);
     const result = await preferences.create({ body });
-    console.log(result.sandbox_init_point);
+    console.log(result.init_point);
     res.json({
-      url: result.sandbox_init_point,
+      url: result.init_point,
     });
   } catch (error) {
     console.error(error);

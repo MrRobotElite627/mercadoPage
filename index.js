@@ -63,13 +63,13 @@ app.post("/create_subscription", async (req, res) => {
         pending: "https://www.techS.com/pending",
       },
       auto_return: "approved",
-      external_reference: user, // Puedes usar esto para identificar al usuario
+    //  external_reference: user, // Puedes usar esto para identificar al usuario
     };
 
     const subscription = await mp.preapproval.create(subscriptionData);
 
     res.json({
-      url: subscription.init_point,
+      url: subscription.response.init_point,
     });
   } catch (error) {
     res.status(500).json({ error: "Error al crear la suscripción", details: error.message });

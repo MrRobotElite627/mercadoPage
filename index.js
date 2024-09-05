@@ -4,7 +4,7 @@ import mercadopago from "mercadopago";
 
 // Agrega credenciales de Mercado Pago
 mercadopago.configure({
-  access_token: "APP_USR-6765012349094062-090501-685a54177b5262c4e2429e520d2cc7c5-1978616648",
+  access_token: "APP_USR-3542896227263654-090506-83b3e170d98a18c129d2045e6214045c-1978616648",
 });
 
 const app = express();
@@ -21,7 +21,7 @@ app.listen(port, () => {
   console.log(`Escuchando en el puerto ${port}`);
 });
 
-app.post("/create_subscription", async (req, res) => {
+app.post("/create_preferences", async (req, res) => {
   const { opc, user } = req.body;
 
   const plans = {
@@ -54,8 +54,7 @@ app.post("/create_subscription", async (req, res) => {
         failure: "https://www.techS.com/failure",
         pending: "https://www.techS.com/pending",
       },
-      notification_url: "https://www.papayasconcrema.cl/notifications",
-      external_reference: user,
+      auto_return: "approved",
     });
 
     res.json({

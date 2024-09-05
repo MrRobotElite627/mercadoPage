@@ -66,5 +66,5 @@ app.post("/create_preferences", async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Escuchando el puerto ${port}`);
+  console.log(`Escuchando el puerto XD ${port}`);
 });

@@ -1,13 +1,14 @@
 import express from "express";
 import cors from "cors";
-import { MercadoPagoConfig, Preference } from "mercadopago";
+import mercadopago from "mercadopago";
 
-const client = new MercadoPagoConfig({
-  accessToken: "APP_USR-3542896227263654-090506-83b3e170d98a18c129d2045e6214045c-1978616648",
+// Agrega credenciales de Mercado Pago
+mercadopago.configure({
+  access_token: "APP_USR-6765012349094062-090501-685a54177b5262c4e2429e520d2cc7c5-1978616648",
 });
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3000; // Usar el puerto proporcionado por el entorno
 
 app.use(cors());
 app.use(express.json());
@@ -16,55 +17,52 @@ app.get("/", (req, res) => {
   res.send("Servidor on-line");
 });
 
-app.post("/create_preferences", async (req, res) => {
-  let titulo = "";
-  let presio = 0;
-  const user = req.body.user;
+app.listen(port, () => {
+  console.log(`Escuchando en el puerto ${port}`);
+});
 
-  if (req.body.opc === 1) {
-    titulo = "Plan Basico";
-    presio = 25;
-  } else if (req.body.opc === 2) {
-    titulo = "Plan Medium";
-    presio = 30;
-  } else if (req.body.opc === 3) {
-    titulo = "Plan Premium";
-    presio = 50;
-  } else if (req.body.opc === 4) {
-    titulo = "Plan Gold";
-    presio = 60;
+app.post("/create_subscription", async (req, res) => {
+  const { opc, user } = req.body;
+
+  const plans = {
+    1: { title: "Plan Básico", price: 25 },
+    2: { title: "Plan Medium", price: 30 },
+    3: { title: "Plan Premium", price: 50 },
+    4: { title: "Plan Gold", price: 60 },
+  };
+
+  const selectedPlan = plans[opc];
+
+  if (!selectedPlan) {
+    return res.status(400).json({ error: "Opción de plan inválida" });
   }
 
   try {
-    const body = {
-      items: [
-        {
-          id: user,
-          title: titulo,
-          quantity: 1,
-          unit_price: presio,
-          currency_id: "PE",
-        },
-      ],
-      back_urls: {
-        success: "https://www.papayasconcrema.cl/success",
-        failure: "https://www.papayasconcrema.cl/failure",
-        pending: "https://www.papayasconcrema.cl/pending",
+    // Crear un plan de suscripción
+    const subscription = await mercadopago.subscriptions.create({
+      reason: selectedPlan.title,
+      auto_recurring: {
+        frequency: 1,
+        frequency_type: "months",
+        transaction_amount: selectedPlan.price,
+        currency_id: "PEN",
+        start_date: new Date().toISOString(),
+        end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
       },
-      auto_return: "approved",
-    };
-    const preferences = new Preference(client);
-    const result = await preferences.create({ body });
-    console.log(result.init_point);
+      back_urls: {
+        success: "https://www.techS.com/success",
+        failure: "https://www.techS.com/failure",
+        pending: "https://www.techS.com/pending",
+      },
+      notification_url: "https://www.papayasconcrema.cl/notifications",
+      external_reference: user,
+    });
+
     res.json({
-      url: result.init_point,
+      url: subscription.init_point,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
+    console.error("Error creando la suscripción:", error);
+    res.status(500).json({ error: "Error al crear la suscripción" });
   }
-});
-
-app.listen(port, () => {
-  console.log(`Escuchando el puerto XD ${port}`);
 });

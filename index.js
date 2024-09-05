@@ -23,7 +23,7 @@ app.listen(port, () => {
   console.log(`Escuchando el puerto ${port}`);
 });
 
-app.post("create_preferences", async (req, res) => {
+app.post("/create_preferences", async (req, res) => {
   const titulo = "";
   const presio = 0;
   const user = req.body.user;
@@ -65,6 +65,8 @@ app.post("create_preferences", async (req, res) => {
       url: result.sandbox_init_point,
     });
   } catch (error) {
-    console.log(error);
-  }
+  console.error(error);
+  res.status(500).json({ error: error.message });
+}
+
 });

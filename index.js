@@ -2,23 +2,19 @@ import express from "express";
 import cors from "cors";
 import mercadopago from "mercadopago";
 
-// Agrega credenciales de Mercado Pago
+// Configura Mercado Pago
 mercadopago.configure({
   access_token: "APP_USR-3542896227263654-090506-83b3e170d98a18c129d2045e6214045c-1978616648",
 });
 
 const app = express();
-const port = process.env.PORT || 3000; // Usar el puerto proporcionado por el entorno
+const port = process.env.PORT || 3000; // Puerto proporcionado por el entorno
 
 app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send("Servidor on-line");
-});
-
-app.listen(port, () => {
-  console.log(`Escuchando en el puerto ${port}`);
+  res.send("Servidor en línea");
 });
 
 app.post("/create_preferences", async (req, res) => {
@@ -38,8 +34,7 @@ app.post("/create_preferences", async (req, res) => {
   }
 
   try {
-    // Crear un plan de suscripción
-    const subscription = await mercadopago.subscriptions.create({
+    const subscriptionData = {
       reason: selectedPlan.title,
       auto_recurring: {
         frequency: 1,
@@ -55,13 +50,21 @@ app.post("/create_preferences", async (req, res) => {
         pending: "https://www.techS.com/pending",
       },
       auto_return: "approved",
-    });
+     // external_reference: user, // Puedes usar esto para identificar al usuario
+    };
+
+    const subscription = await mercadopago.preapproval.create(subscriptionData);
 
     res.json({
-      url: subscription.init_point,
+      url: subscription.response.init_point,
     });
   } catch (error) {
-    console.error("Error creando la suscripción:", error);
+    console.error("Error al crear la suscripción:", error);
     res.status(500).json({ error: "Error al crear la suscripción" });
   }
+});
+
+
+app.listen(port, () => {
+  console.log(`Escuchando en el puerto ${port}`);
 });

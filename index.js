@@ -62,11 +62,12 @@ app.post("/create_subscription", async (req, res) => {
         failure: "https://www.techS.com/failure",
         pending: "https://www.techS.com/pending",
       },
+      
       auto_return: "approved",
     //  external_reference: user, // Puedes usar esto para identificar al usuario
     };
 
-    const subscription = await mp.preapproval.create(subscriptionData);
+    const subscription = await mp.preapproval_plan.create(subscriptionData);
 
     res.json({
       url: subscription.response.init_point,

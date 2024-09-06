@@ -52,9 +52,9 @@ app.post("/create_preferences", async (req, res) => {
         },
       ],
       back_url: {
-        success: "https://www.papayasconcrema.cl/success",
-        failure: "https://www.papayasconcrema.cl/failure",
-        pending: "https://www.papayasconcrema.cl/pending",
+        success: "https://www.codexapps.pe/success",
+        failure: "https://www.codexapps.pe/failure",
+        pending: "https://www.codexapps.pe/pending",
       },
       auto_return: "approved",
     };

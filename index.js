@@ -1,13 +1,14 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
 
 // Configuración de Mercado Pago
-const MERCADO_PAGO_ACCESS_TOKEN = 'APP_USR-3542896227263654-090506-83b3e170d98a18c129d2045e6214045c-1978616648';
-const SUCCESS_URL = 'https://www.codex.pe/success';
-const FAILURE_URL = 'https://www.codex.pe/failure';
-const PENDING_URL = 'https://www.codex.pe/pending';
+const MERCADO_PAGO_ACCESS_TOKEN =
+  "APP_USR-3542896227263654-090506-83b3e170d98a18c129d2045e6214045c-1978616648";
+const SUCCESS_URL = "https://www.codex.pe/success";
+const FAILURE_URL = "https://www.codex.pe/failure";
+const PENDING_URL = "https://www.codex.pe/pending";
 
 // Inicializar Mercado Pago con las credenciales
 const client = new MercadoPagoConfig({
@@ -22,81 +23,95 @@ app.use(helmet()); // Seguridad adicional para cabeceras HTTP
 app.use(express.json());
 
 // Almacenamiento en memoria para los estados de pago
-const paymentStatusStore = {};
 
 // Ruta de prueba
-app.get('/', (req, res) => res.send('Servidor on-line'));
+app.get("/", (req, res) => res.send("Servidor on-line"));
 
-app.post('/webhook', async (req, res) => {
-  console.log('Cuerpo de la solicitud recibido:', req.body);
+const paymentData = {};  // Puede ser reemplazado por una base de datos real como MongoDB, MySQL, etc.
 
-  const { type, data } = req.body;
-  let paymentId = null;
+app.post("/webhook", async (req, res) => {
+  const paymentId = req.body.data.id;
 
-  if (type === 'payment') {
-    paymentId = data?.id;
-  } else if (type === 'merchant_order') {
-    paymentId = data?.payments?.[0]?.id; // Ajusta según la estructura real de los datos
+  // Recuperar el userId desde la metadata
+  const userId = req.body.data.metadata.userId; // Asegúrate de que Mercado Pago envía el userId en metadata
+
+  if (userId) {
+    // Guardar el paymentId en la "base de datos" temporal
+    paymentData[userId] = paymentId;
+
+    console.log(`Pago recibido: Payment ID: ${paymentId} para el usuario: ${userId}`);
+
+    // Enviar respuesta a Mercado Pago
+    res.status(200).json({ message: "Payment received", compraID: paymentId });
+  } else {
+    res.status(400).json({ error: "User ID no proporcionado en la metadata" });
   }
+});
 
-  console.log('PaymentId:', paymentId);
 
-  if (!paymentId) {
-    console.error('ID de pago no encontrado en el cuerpo de la solicitud');
-    return res.sendStatus(400); // Solicitud incorrecta
-  }
+// Endpoint para consultar el estado del pago y obtener detalles desde Mercado Pago
+app.get("/payment_status/:userId", async (req, res) => {
+  const userId = req.params.userId;
 
-  try {
-    const paymentDetails = await fetch(`https://api.mercadolibre.com/v1/payments/${paymentId}`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${MERCADO_PAGO_ACCESS_TOKEN}`,
-      },
-    });
-    const payment = await paymentDetails.json();
+  // Verificar si existe un paymentId asociado al userId
+  if (paymentData[userId]) {
+    const paymentId = paymentData[userId];
 
-    if (payment.status === 'approved') {
-      paymentStatusStore[paymentId] = 'approved';
-      console.log(`Pago ${paymentId} aprobado`);
-    } else if (payment.status === 'pending') {
-      paymentStatusStore[paymentId] = 'pending';
-      console.log(`Pago ${paymentId} está pendiente`);
-    } else {
-      paymentStatusStore[paymentId] = 'failure';
-      console.log(`Pago ${paymentId} fallido`);
+    try {
+      // Realizar la solicitud a la API de Mercado Pago utilizando fetch
+      const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': MERCADO_PAGO_ACCESS_TOKEN,  // Reemplaza con tu Access Token
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const paymentDetails = await response.json();
+
+      if (response.ok) {
+        // Si la respuesta es exitosa, devolver los detalles del pago
+        res.json({ 
+          compraID: paymentId,
+          paymentDetails
+        });
+      } else {
+        // Si hubo un error en la solicitud, devolver el código de error y los detalles
+        res.status(response.status).json({
+          error: "Error al obtener detalles del pago desde Mercado Pago.",
+          details: paymentDetails
+        });
+      }
+    } catch (error) {
+      // Manejo de errores de la solicitud
+      console.error(`Error en la solicitud a Mercado Pago: ${error.message}`);
+      res.status(500).json({ error: "Error al obtener detalles del pago." });
     }
-
-    res.sendStatus(200);
-  } catch (error) {
-    console.error('Error en el webhook:', error);
-    res.sendStatus(500);
+  } else {
+    // Si no hay registro de un pago todavía
+    res.status(404).json({ error: "No se ha recibido ningún pago para este usuario." });
   }
 });
 
 
-app.get('/check_payment_status/:paymentId', (req, res) => {
-  const { paymentId } = req.params;
-  const status = paymentStatusStore[paymentId] || 'unknown'; // 'unknown' si no se encuentra el estado
-  console.error('El paymentId es:', paymentId);
-
-  res.json({ status });
-});
 
 // Ruta para crear preferencias de pago
-app.post('/create_preferences', async (req, res) => {
+app.post("/create_preferences", async (req, res) => {
   const { opc, paymentId } = req.body;
 
   // Validación básica de entrada
   if (!paymentId || ![1, 2, 3, 4].includes(opc)) {
-    return res.status(400).json({ error: 'Opción inválida o ID de pago no proporcionado.' });
+    return res
+      .status(400)
+      .json({ error: "Opción inválida o ID de pago no proporcionado." });
   }
 
   // Determinar el título y precio basado en la opción
   const plans = {
-    1: { title: 'Plan Basico', price: 25 },
-    2: { title: 'Plan Medium', price: 30 },
-    3: { title: 'Plan Premium', price: 50 },
-    4: { title: 'Plan Gold', price: 60 }
+    1: { title: "Plan Basico", price: 25 },
+    2: { title: "Plan Medium", price: 30 },
+    3: { title: "Plan Premium", price: 50 },
+    4: { title: "Plan Gold", price: 60 },
   };
 
   const { title, price } = plans[opc];
@@ -105,11 +120,10 @@ app.post('/create_preferences', async (req, res) => {
     const body = {
       items: [
         {
-          id: paymentId,
           title,
           quantity: 1,
           unit_price: price,
-          currency_id: 'PE',
+          currency_id: "PE",
         },
       ],
       back_urls: {
@@ -117,17 +131,22 @@ app.post('/create_preferences', async (req, res) => {
         failure: FAILURE_URL,
         pending: PENDING_URL,
       },
-      notification_url: 'https://mercadopage.onrender.com/webhook',  // URL de tu webhook
-      auto_return: 'approved',
+      payer: {
+        email: paymentId, // Aquí debes pasar el correo del cliente
+      },
+      metadata: {
+        userId: paymentId, // Enviando el userId como parte de la metadata
+      },
+      notification_url: "https://mercadopage.onrender.com/webhook", // URL de tu webhook
+      auto_return: "approved",
     };
 
     const preferences = new Preference(client);
     const result = await preferences.create({ body });
-    console.log(result.id);
-    res.json({ url: result.init_point, preferenceId: paymentId });
+    res.json({ url: result.init_point});
   } catch (error) {
-    console.error('Error al crear la preferencia:', error);
-    res.status(500).json({ error: 'Error interno del servidor.' });
+    console.error("Error al crear la preferencia:", error);
+    res.status(500).json({ error: "Error interno del servidor." });
   }
 });
 

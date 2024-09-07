@@ -60,6 +60,14 @@ app.post('/create_preferences', async (req, res) => {
         pending: PENDING_URL,
       },
       auto_return: 'approved',
+      payment_methods: {
+        excluded_payment_types: [
+          { id: 'ticket' } // Excluir pagos por ticket si es necesario
+        ],
+        excluded_payment_methods: [
+          { id: 'yape' } // Excluir Yape
+        ]
+      }
     };
 
     const preferences = new Preference(client);

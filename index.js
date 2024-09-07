@@ -30,10 +30,12 @@ app.get("/", (req, res) => res.send("Servidor on-line"));
 const paymentData = {};  // Puede ser reemplazado por una base de datos real como MongoDB, MySQL, etc.
 
 app.post("/webhook", async (req, res) => {
+  console.log("Cuerpo del webhook recibido:", req.body);
+
   const paymentId = req.body.data.id;
 
-  // Recuperar el userId desde la metadata
-  const userId = req.body.data.metadata.userId; // Asegúrate de que Mercado Pago envía el userId en metadata
+  // Asegúrate de que el campo metadata existe en la respuesta
+  const userId = req.body.data.metadata ? req.body.data.metadata.userId : null;
 
   if (userId) {
     // Guardar el paymentId en la "base de datos" temporal
@@ -47,6 +49,7 @@ app.post("/webhook", async (req, res) => {
     res.status(400).json({ error: "User ID no proporcionado en la metadata" });
   }
 });
+
 
 
 // Endpoint para consultar el estado del pago y obtener detalles desde Mercado Pago
@@ -123,7 +126,7 @@ app.post("/create_preferences", async (req, res) => {
           title,
           quantity: 1,
           unit_price: price,
-          currency_id: "PE",
+          currency_id: "PEN",
         },
       ],
       back_urls: {

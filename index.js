@@ -1,8 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { MercadoPagoConfig, Preference } from 'mercadopago';
-
+import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 // Configuración de Mercado Pago
 const MERCADO_PAGO_ACCESS_TOKEN = 'APP_USR-3542896227263654-090506-83b3e170d98a18c129d2045e6214045c-1978616648';
 const SUCCESS_URL = 'https://www.codex.pe/success';
@@ -23,6 +22,52 @@ app.use(express.json());
 
 // Ruta de prueba
 app.get('/', (req, res) => res.send('Servidor on-line'));
+
+app.post('/webhook', async (req, res) => {
+  const paymentId = req.body.data.id;
+
+  try {
+    // Obtener detalles del pago
+    const payment = await Payment.findById(paymentId);
+
+    if (payment.status === 'approved') {
+      // Actualizar el estado del usuario en la base de datos o sistema
+      console.log(`Pago ${paymentId} aprobado para el usuario ${payment.payer.email}`);
+
+      // Aquí puedes otorgar privilegios al usuario
+      // Ejemplo: updateUserAccess(user.id, "Plan Premium");
+
+    } else if (payment.status === 'pending') {
+      console.log(`Pago ${paymentId} está pendiente`);
+    }
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('Error en el webhook:', error);
+    res.sendStatus(500);
+  }
+});
+
+app.get('/check_payment_status/:user', async (req, res) => {
+  const { user } = req.params;
+  
+  try {
+    // Obtener el último pago del usuario (basado en tu lógica)
+    const payment = await findLastPaymentForUser(user);
+
+    if (payment.status === 'approved') {
+      res.json({ status: 'approved' });
+    } else if (payment.status === 'pending') {
+      res.json({ status: 'pending' });
+    } else {
+      res.json({ status: 'failure' });
+    }
+  } catch (error) {
+    console.error('Error al verificar el estado del pago:', error);
+    res.status(500).json({ status: 'failure' });
+  }
+});
+
 
 // Ruta para crear preferencias de pago
 app.post('/create_preferences', async (req, res) => {
@@ -59,15 +104,8 @@ app.post('/create_preferences', async (req, res) => {
         failure: FAILURE_URL,
         pending: PENDING_URL,
       },
+      notification_url: 'https://mercadopage.onrender.com/webhook',  // URL de tu webhook
       auto_return: 'approved',
-      payment_methods: {
-        excluded_payment_types: [
-          { id: 'ticket' } // Excluir pagos por ticket si es necesario
-        ],
-        excluded_payment_methods: [
-          { id: 'yape' } // Excluir Yape
-        ]
-      }
     };
 
     const preferences = new Preference(client);

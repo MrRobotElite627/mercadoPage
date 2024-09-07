@@ -38,8 +38,14 @@ app.post('/webhook', async (req, res) => {
   }
 
   try {
-    // Obtener detalles del pago
-    const payment = await Payment.findById(paymentId);
+    // Obtener detalles del pago usando la API de Mercado Pago
+    const paymentDetails = await fetch(`https://api.mercadolibre.com/v1/payments/${paymentId}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${MERCADO_PAGO_ACCESS_TOKEN}`,
+      },
+    });
+    const payment = await paymentDetails.json();
 
     if (payment.status === 'approved') {
       paymentStatusStore[paymentId] = 'approved';
@@ -59,12 +65,10 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
-
-
 app.get('/check_payment_status/:paymentId', (req, res) => {
   const { paymentId } = req.params;
   const status = paymentStatusStore[paymentId] || 'unknown'; // 'unknown' si no se encuentra el estado
-  console.log(`Estado consultado para el ID de pago ${paymentId}: ${status}`);
+
   res.json({ status });
 });
 

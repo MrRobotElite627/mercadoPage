@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
+<<<<<<< HEAD
 
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
@@ -24,6 +25,8 @@ const firebaseConfig = {
 // Initialize Firebase
 const appFirebase = initializeApp(firebaseConfig);
 const db = getFirestore(appFirebase);
+=======
+>>>>>>> d4e8ed1a2250ba1ebbefd9e5953eedde2ee88742
 
 // Configuración de Mercado Pago
 const MERCADO_PAGO_ACCESS_TOKEN =
@@ -49,12 +52,17 @@ app.use(express.json());
 // Ruta de prueba
 app.get("/", (req, res) => res.send("Servidor on-line"));
 
+<<<<<<< HEAD
+=======
+const paymentData = {};  // Puede ser reemplazado por una base de datos real como MongoDB, MySQL, etc.
+>>>>>>> d4e8ed1a2250ba1ebbefd9e5953eedde2ee88742
 
 app.post("/webhook", async (req, res) => {
   console.log("Cuerpo del webhook recibido:", req.body);
 
   try {
     const email = req.query.email; // Capturamos el correo de la URL
+<<<<<<< HEAD
     const idCompra = req.body.data.id; // Capturamos el ID de compra del cuerpo del webhook
 
     if (!email || !idCompra) {
@@ -81,6 +89,18 @@ app.post("/webhook", async (req, res) => {
       await setDoc(newDocRef, { email, idcompra: idCompra });
       console.log("Nuevo usuario creado con email e idcompra.");
     }
+=======
+
+    if (!email) {
+      console.log("Correo electrónico no proporcionado en la URL");
+      return res.status(400).json({ error: "Correo electrónico no proporcionado." });
+    }
+
+    console.log("Correo electrónico recibido:", email);
+
+    // Aquí puedes guardar el correo en tu base de datos junto con otros datos
+    // await db.collection("pagosApp").doc(req.body.data.id).set({ email });
+>>>>>>> d4e8ed1a2250ba1ebbefd9e5953eedde2ee88742
 
     res.status(200).json({ success: true });
   } catch (error) {
@@ -91,6 +111,10 @@ app.post("/webhook", async (req, res) => {
 
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> d4e8ed1a2250ba1ebbefd9e5953eedde2ee88742
 // Endpoint para consultar el estado del pago y obtener detalles desde Mercado Pago
 app.get("/payment_status/:userId", async (req, res) => {
   const userId = req.params.userId;

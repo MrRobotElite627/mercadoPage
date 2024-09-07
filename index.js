@@ -31,6 +31,7 @@ app.post('/webhook', async (req, res) => {
   console.log('Cuerpo de la solicitud recibido:', req.body);
 
   const paymentId = req.body.data?.id;
+  console.log('PaymentId:', paymentId);
 
   if (!paymentId) {
     console.error('ID de pago no encontrado en el cuerpo de la solicitud');
@@ -113,8 +114,8 @@ app.post('/create_preferences', async (req, res) => {
 
     const preferences = new Preference(client);
     const result = await preferences.create({ body });
-
-    res.json({ url: result.init_point });
+    console.log(result.id);
+    res.json({ url: result.init_point, preferenceId: result.id });
   } catch (error) {
     console.error('Error al crear la preferencia:', error);
     res.status(500).json({ error: 'Error interno del servidor.' });

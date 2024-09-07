@@ -33,8 +33,9 @@ app.post("/webhook", async (req, res) => {
   console.log("Cuerpo del webhook recibido:", req.body);
   try {
     // Asegúrate de que 'metadata' está en el cuerpo del webhook
+    const metadata = req.body?.metadata?.userId;
     const payerEmail = req.body?.data?.payer?.email;
-    console.log("Email recibida:", payerEmail);
+    console.log("Metadata recibida:", metadata);
 
     res.status(200).json({ success: true });
   } catch (error) {

@@ -28,13 +28,18 @@ const paymentStatusStore = {};
 app.get('/', (req, res) => res.send('Servidor on-line'));
 
 app.post('/webhook', async (req, res) => {
-  const paymentId = req.body.data.id;
-  console.log('Webhook recibido para el ID de pago:', paymentId);
+  console.log('Cuerpo de la solicitud recibido:', req.body);
+
+  const paymentId = req.body.data?.id;
+
+  if (!paymentId) {
+    console.error('ID de pago no encontrado en el cuerpo de la solicitud');
+    return res.sendStatus(400); // Solicitud incorrecta
+  }
 
   try {
     // Obtener detalles del pago
     const payment = await Payment.findById(paymentId);
-    console.log('Detalles del pago:', payment);
 
     if (payment.status === 'approved') {
       paymentStatusStore[paymentId] = 'approved';
@@ -53,6 +58,7 @@ app.post('/webhook', async (req, res) => {
     res.sendStatus(500);
   }
 });
+
 
 
 app.get('/check_payment_status/:paymentId', (req, res) => {

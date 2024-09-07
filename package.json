@@ -13,6 +13,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "firebase": "^10.13.1",
     "helmet": "^7.1.0",
     "mercadopago": "^2.0.15"
   }

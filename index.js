@@ -30,7 +30,15 @@ app.get('/', (req, res) => res.send('Servidor on-line'));
 app.post('/webhook', async (req, res) => {
   console.log('Cuerpo de la solicitud recibido:', req.body);
 
-  const paymentId = req.body.data?.id;
+  const { type, data } = req.body;
+  let paymentId = null;
+
+  if (type === 'payment') {
+    paymentId = data?.id;
+  } else if (type === 'merchant_order') {
+    paymentId = data?.payments?.[0]?.id; // Ajusta según la estructura real de los datos
+  }
+
   console.log('PaymentId:', paymentId);
 
   if (!paymentId) {
@@ -39,7 +47,6 @@ app.post('/webhook', async (req, res) => {
   }
 
   try {
-    // Obtener detalles del pago usando la API de Mercado Pago
     const paymentDetails = await fetch(`https://api.mercadolibre.com/v1/payments/${paymentId}`, {
       method: 'GET',
       headers: {
@@ -66,9 +73,11 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
+
 app.get('/check_payment_status/:paymentId', (req, res) => {
   const { paymentId } = req.params;
   const status = paymentStatusStore[paymentId] || 'unknown'; // 'unknown' si no se encuentra el estado
+  console.error('El paymentId es:', paymentId);
 
   res.json({ status });
 });

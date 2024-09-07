@@ -32,21 +32,19 @@ const paymentData = {};  // Puede ser reemplazado por una base de datos real com
 app.post("/webhook", async (req, res) => {
   console.log("Cuerpo del webhook recibido:", req.body);
 
-  const paymentId = req.body.data.id;
+  // Extraer el recurso de la solicitud
 
-  // Asegúrate de que el campo metadata existe en la respuesta
-  const userId = req.body.data.metadata ? req.body.data.metadata.userId : null;
+  try {
+    // Realizar una solicitud para obtener los detalles del pago
+    const resourceUrl = req.query;
+    
 
-  if (userId) {
-    // Guardar el paymentId en la "base de datos" temporal
-    paymentData[userId] = paymentId;
+    res.json({ resultado: resourceUrl});
 
-    console.log(`Pago recibido: Payment ID: ${paymentId} para el usuario: ${userId}`);
-
-    // Enviar respuesta a Mercado Pago
-    res.status(200).json({ message: "Payment received", compraID: paymentId });
-  } else {
-    res.status(400).json({ error: "User ID no proporcionado en la metadata" });
+   
+  } catch (error) {
+    console.error("Error al procesar el webhook:", error);
+    res.status(500).json({ error: "Error interno del servidor." });
   }
 });
 

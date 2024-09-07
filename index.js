@@ -95,12 +95,10 @@ app.get("/payment_status/:userId", async (req, res) => {
   const userId = req.params.userId;
 
   // Verificar si existe un paymentId asociado al userId
-  if (paymentData[userId]) {
-    const paymentId = paymentData[userId];
-
+  if (userId) {
     try {
       // Realizar la solicitud a la API de Mercado Pago utilizando fetch
-      const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+      const response = await fetch(`https://api.mercadopago.com/v1/payments/${userId}`, {
         method: 'GET',
         headers: {
           'Authorization': MERCADO_PAGO_ACCESS_TOKEN,  // Reemplaza con tu Access Token
@@ -113,7 +111,7 @@ app.get("/payment_status/:userId", async (req, res) => {
       if (response.ok) {
         // Si la respuesta es exitosa, devolver los detalles del pago
         res.json({ 
-          compraID: paymentId,
+          compraID: userId,
           paymentDetails
         });
       } else {

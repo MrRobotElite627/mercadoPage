@@ -5,7 +5,9 @@ import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
 
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore"; // Importa getFirestore
+import { getFirestore, collection, query, where, getDocs, setDoc, doc } from "firebase/firestore";
+
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -54,8 +56,8 @@ app.post("/webhook", async (req, res) => {
   console.log("Cuerpo del webhook recibido:", req.body);
 
   try {
-    const email = req.query.email; // Capturamos el correo de la URL
-    const idCompra = req.body.data.id; // Capturamos el ID de compra del cuerpo del webhook
+    const email = req.query.email; 
+    const idCompra = req.body.data?.id; 
 
     if (!email || !idCompra) {
       console.log("Correo electrónico o ID de compra no proporcionado.");
@@ -65,19 +67,16 @@ app.post("/webhook", async (req, res) => {
     console.log("Correo electrónico recibido:", email);
     console.log("ID de compra recibido:", idCompra);
 
-    // Verificar si el usuario ya existe en la colección `pagosApp`
     const usersCollection = collection(db, "pagosApp");
     const q = query(usersCollection, where("email", "==", email));
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
-      // Si el usuario ya existe, actualizar el campo idcompra
       const docId = querySnapshot.docs[0].id;
       await setDoc(doc(db, "pagosApp", docId), { idcompra: idCompra }, { merge: true });
       console.log("Usuario existente, actualizando idcompra.");
     } else {
-      // Si el usuario no existe, crear un nuevo documento con email e idcompra
-      const newDocRef = doc(usersCollection); // Crear un nuevo documento con un ID automático
+      const newDocRef = doc(usersCollection);
       await setDoc(newDocRef, { email, idcompra: idCompra });
       console.log("Nuevo usuario creado con email e idcompra.");
     }

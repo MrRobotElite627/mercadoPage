@@ -31,17 +31,12 @@ const paymentData = {};  // Puede ser reemplazado por una base de datos real com
 
 app.post("/webhook", async (req, res) => {
   console.log("Cuerpo del webhook recibido:", req.body);
-
-  // Extraer el recurso de la solicitud
-
   try {
-    // Realizar una solicitud para obtener los detalles del pago
-    const resourceUrl = req.query;
-    
+    // Asegúrate de que 'metadata' está en el cuerpo del webhook
+    const metadata = req.body?.data?.metadata;
+    console.log("Metadata recibida:", metadata);
 
-    console.log({ resultado: resourceUrl , metadata : req.body});
-
-   
+    res.status(200).json({ success: true });
   } catch (error) {
     console.error("Error al procesar el webhook:", error);
     res.status(500).json({ error: "Error interno del servidor." });

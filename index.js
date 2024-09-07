@@ -28,12 +28,16 @@ app.get('/order_status/:preferenceId', async (req, res) => {
   const { preferenceId } = req.params;
 
   try {
-    const preferences = new Preference(client);
-    const result = await preferences.get(preferenceId);
+    const payment = new Payment(client);
+    const result = await payment.findById(preferenceId);
     
+    if (!result) {
+      return res.status(404).json({ error: 'Preferencia no encontrada.' });
+    }
+
     // Retornar el estado del pedido
     const status = result.status;
-    console.error('El estado es:', status);
+    console.log('El estado es:', status);
 
     res.json({ status });
   } catch (error) {

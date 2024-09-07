@@ -73,7 +73,7 @@ app.post("/webhook", async (req, res) => {
 
     if (!querySnapshot.empty) {
       const docId = querySnapshot.docs[0].id;
-      await setDoc(doc(db, "pagosApp", docId), { idcompra: idCompra }, { merge: true });
+      await setDoc(doc(db, "pagosApp", docId), { idcompra: [idCompra] }, { merge: true });
       console.log("Usuario existente, actualizando idcompra.");
     } else {
       const newDocRef = doc(usersCollection);

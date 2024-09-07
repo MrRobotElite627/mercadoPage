@@ -174,10 +174,10 @@ app.post("/create_preferences", async (req, res) => {
       payment_methods: {
         excluded_payment_methods: [
           { id: "yape" }, // Esto es un ejemplo, verifica el ID correcto para Yape si está disponible
-          { id: "debit_card" } // Ejemplo para tarjetas de débito, ajusta según tus necesidades
         ],
         excluded_payment_types: [
-          { id: "atm" }, // Excluir pagos en cajeros automáticos
+          { id: "credit_card" }, // Excluir tarjetas de crédito
+          { id: "debit_card" }, // Excluir pagos en cajeros automáticos
           { id: "ticket" } // Excluir pagos por ticket
         ],
       },

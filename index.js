@@ -39,7 +39,7 @@ app.post("/webhook", async (req, res) => {
     const resourceUrl = req.query;
     
 
-    res.json({ resultado: resourceUrl , metadata : req.body});
+    console.log({ resultado: resourceUrl , metadata : req.body});
 
    
   } catch (error) {

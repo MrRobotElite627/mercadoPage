@@ -29,14 +29,16 @@ app.get('/', (req, res) => res.send('Servidor on-line'));
 
 app.post('/webhook', async (req, res) => {
   const paymentId = req.body.data.id;
+  console.log('Webhook recibido para el ID de pago:', paymentId);
 
   try {
     // Obtener detalles del pago
     const payment = await Payment.findById(paymentId);
+    console.log('Detalles del pago:', payment);
 
     if (payment.status === 'approved') {
       paymentStatusStore[paymentId] = 'approved';
-      console.log(`Pago ${paymentId} aprobado para el usuario ${payment.payer.email}`);
+      console.log(`Pago ${paymentId} aprobado`);
     } else if (payment.status === 'pending') {
       paymentStatusStore[paymentId] = 'pending';
       console.log(`Pago ${paymentId} está pendiente`);
@@ -52,10 +54,11 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
+
 app.get('/check_payment_status/:paymentId', (req, res) => {
   const { paymentId } = req.params;
   const status = paymentStatusStore[paymentId] || 'unknown'; // 'unknown' si no se encuentra el estado
-
+  console.log(`Estado consultado para el ID de pago ${paymentId}: ${status}`);
   res.json({ status });
 });
 

@@ -124,7 +124,7 @@ app.post('/create_preferences', async (req, res) => {
     const preferences = new Preference(client);
     const result = await preferences.create({ body });
     console.log(result.id);
-    res.json({ url: result.init_point, preferenceId: result.id });
+    res.json({ url: result.init_point, preferenceId: paymentId });
   } catch (error) {
     console.error('Error al crear la preferencia:', error);
     res.status(500).json({ error: 'Error interno del servidor.' });

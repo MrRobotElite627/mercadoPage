@@ -28,24 +28,36 @@ app.get('/order_status/:preferenceId', async (req, res) => {
   const { preferenceId } = req.params;
 
   try {
-    const payment = new Payment(client);
-    const result = await payment.findById(preferenceId);
+    // Obtener detalles del pago usando la API de Mercado Pago
+    const response = await fetch(`https://api.mercadolibre.com/v1/payments/${preferenceId}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${MERCADO_PAGO_ACCESS_TOKEN}`,
+      },
+    });
     
-    if (!result) {
-      return res.status(404).json({ error: 'Preferencia no encontrada.' });
+    if (!response.ok) {
+      throw new Error(`Error en la consulta de pago: ${response.statusText}`);
     }
 
-    // Retornar el estado del pedido
-    const status = result.status;
-    console.log('El estado es:', status);
+    const payment = await response.json();
+    const { status } = payment;
+
+    // Determinar el estado del pago
+    if (status === 'approved') {
+      console.log(`Pago ${preferenceId} aprobado`);
+    } else if (status === 'pending') {
+      console.log(`Pago ${preferenceId} está pendiente`);
+    } else {
+      console.log(`Pago ${preferenceId} fallido`);
+    }
 
     res.json({ status });
   } catch (error) {
     console.error('Error al consultar el estado del pedido:', error);
-    res.status(500).json({ errores: 'Error interno del servidor.', error });
+    res.status(500).json({ error: 'Error interno del servidor.' });
   }
 });
-
 
 // Ruta para crear preferencias de pago
 app.post('/create_preferences', async (req, res) => {

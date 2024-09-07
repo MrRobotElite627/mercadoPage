@@ -31,11 +31,36 @@ const paymentData = {};  // Puede ser reemplazado por una base de datos real com
 
 app.post("/webhook", async (req, res) => {
   console.log("Cuerpo del webhook recibido:", req.body);
+
   try {
-    // Asegúrate de que 'metadata' está en el cuerpo del webhook
-    const metadata = req.body?.metadata?.userId;
-    const payerEmail = req.body?.data?.payer?.email;
-    console.log("Metadata recibida:", metadata);
+    const paymentId = req.body?.data?.id; // ID del pago recibido
+
+    if (!paymentId) {
+      console.log("ID de pago no recibido");
+      return res.status(400).json({ error: "ID de pago no proporcionado." });
+    }
+
+    // Hacer una solicitud a la API de Mercado Pago para obtener detalles del pago
+    const paymentDetailsUrl = `https://api.mercadopago.com/v1/payments/${paymentId}?access_token=${MERCADO_PAGO_ACCESS_TOKEN}`;
+
+    const response = await axios.get(paymentDetailsUrl); // Consulta a la API de Mercado Pago
+    const paymentDetails = response.data;
+
+    // Extraer los campos necesarios de la respuesta
+    const userId = paymentDetails.metadata.userId; // Aquí obtenemos el userId (correo electrónico)
+
+    if (!userId) {
+      console.log("El campo metadata.userId no está presente en la respuesta de la API.");
+      return res.status(400).json({ error: "No se encontró el metadata en los detalles del pago." });
+    }
+
+    // Guardar el email y el ID del pago en Firestore
+    //await db.collection("pagosApp").doc(paymentId).set({
+    //  email: userId, // El correo del usuario
+    //  idPago: paymentId, // El ID del pago
+    //});
+
+    console.log("Datos guardados en Firebase:", { email: userId, idPago: paymentId });
 
     res.status(200).json({ success: true });
   } catch (error) {

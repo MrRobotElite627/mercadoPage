@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
+
 // Configuración de Mercado Pago
 const MERCADO_PAGO_ACCESS_TOKEN = 'APP_USR-3542896227263654-090506-83b3e170d98a18c129d2045e6214045c-1978616648';
 const SUCCESS_URL = 'https://www.codex.pe/success';
@@ -20,52 +21,64 @@ app.use(cors());
 app.use(helmet()); // Seguridad adicional para cabeceras HTTP
 app.use(express.json());
 
+// Almacenamiento en memoria para los estados de pago
+const paymentStatusStore = {};
+
 // Ruta de prueba
 app.get('/', (req, res) => res.send('Servidor on-line'));
 
+app.post('/webhook', async (req, res) => {
+  console.log('Cuerpo de la solicitud recibido:', req.body);
 
-app.get('/order_status/:preferenceId', async (req, res) => {
-  const { preferenceId } = req.params;
+  const paymentId = req.body.data?.id;
+
+  if (!paymentId) {
+    console.error('ID de pago no encontrado en el cuerpo de la solicitud');
+    return res.sendStatus(400); // Solicitud incorrecta
+  }
 
   try {
     // Obtener detalles del pago usando la API de Mercado Pago
-    const response = await fetch(`https://api.mercadolibre.com/v1/payments/${preferenceId}`, {
+    const paymentDetails = await fetch(`https://api.mercadolibre.com/v1/payments/${paymentId}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${MERCADO_PAGO_ACCESS_TOKEN}`,
       },
     });
-    
-    if (!response.ok) {
-      throw new Error(`Error en la consulta de pago: ${response.statusText}`);
-    }
+    const payment = await paymentDetails.json();
 
-    const payment = await response.json();
-    const { status } = payment;
-
-    // Determinar el estado del pago
-    if (status === 'approved') {
-      console.log(`Pago ${preferenceId} aprobado`);
-    } else if (status === 'pending') {
-      console.log(`Pago ${preferenceId} está pendiente`);
+    if (payment.status === 'approved') {
+      paymentStatusStore[paymentId] = 'approved';
+      console.log(`Pago ${paymentId} aprobado`);
+    } else if (payment.status === 'pending') {
+      paymentStatusStore[paymentId] = 'pending';
+      console.log(`Pago ${paymentId} está pendiente`);
     } else {
-      console.log(`Pago ${preferenceId} fallido`);
+      paymentStatusStore[paymentId] = 'failure';
+      console.log(`Pago ${paymentId} fallido`);
     }
 
-    res.json({ status });
+    res.sendStatus(200);
   } catch (error) {
-    console.error('Error al consultar el estado del pedido:', error);
-    res.status(500).json({ error: 'Error interno del servidor.' });
+    console.error('Error en el webhook:', error);
+    res.sendStatus(500);
   }
+});
+
+app.get('/check_payment_status/:paymentId', (req, res) => {
+  const { paymentId } = req.params;
+  const status = paymentStatusStore[paymentId] || 'unknown'; // 'unknown' si no se encuentra el estado
+
+  res.json({ status });
 });
 
 // Ruta para crear preferencias de pago
 app.post('/create_preferences', async (req, res) => {
-  const { opc, user } = req.body;
+  const { opc, paymentId } = req.body;
 
   // Validación básica de entrada
-  if (!user || ![1, 2, 3, 4].includes(opc)) {
-    return res.status(400).json({ error: 'Opción inválida o usuario no proporcionado.' });
+  if (!paymentId || ![1, 2, 3, 4].includes(opc)) {
+    return res.status(400).json({ error: 'Opción inválida o ID de pago no proporcionado.' });
   }
 
   // Determinar el título y precio basado en la opción
@@ -82,7 +95,7 @@ app.post('/create_preferences', async (req, res) => {
     const body = {
       items: [
         {
-          id: user,
+          id: paymentId,
           title,
           quantity: 1,
           unit_price: price,
@@ -94,25 +107,18 @@ app.post('/create_preferences', async (req, res) => {
         failure: FAILURE_URL,
         pending: PENDING_URL,
       },
-      payment_methods: {
-        excluded_payment_types: [
-          { id: 'ticket' } // Excluir pagos por ticket si es necesario
-        ],
-        excluded_payment_methods: [
-          { id: 'yape' } // Excluir Yape
-        ]
-      },
+      notification_url: 'https://mercadopage.onrender.com/webhook',  // URL de tu webhook
       auto_return: 'approved',
     };
 
     const preferences = new Preference(client);
     const result = await preferences.create({ body });
-    console.log(result.id);
-    res.json({ url: result.init_point, preferenceId: result.id });
+
+    res.json({ url: result.init_point });
   } catch (error) {
     console.error('Error al crear la preferencia:', error);
     res.status(500).json({ error: 'Error interno del servidor.' });
   }
 });
 
-app.listen(port, () => console.log(`Escuchando en el puerto ${port}`));
+app.listen(port, () => console.log(`Escuchando en el puerto XDD${port}`));

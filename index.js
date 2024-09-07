@@ -104,6 +104,14 @@ app.post('/create_preferences', async (req, res) => {
         failure: FAILURE_URL,
         pending: PENDING_URL,
       },
+      payment_methods: {
+        excluded_payment_types: [
+          { id: 'ticket' } // Excluir pagos por ticket si es necesario
+        ],
+        excluded_payment_methods: [
+          { id: 'yape' } // Excluir Yape
+        ]
+      },
       notification_url: 'https://mercadopage.onrender.com/webhook',  // URL de tu webhook
       auto_return: 'approved',
     };

@@ -59,8 +59,8 @@ app.post("/webhook", async (req, res) => {
     const email = req.query.email;
     const idCompra = req.body.data?.id;
     const paymentMethod = req.body.data?.payment_method; // Método de pago
-    const title = req.body.data?.title; // Título del producto
-    const date = req.body.data?.date; // Fecha proporcionada en el cuerpo de la solicitud
+    const title = req.query.plan; // Título del producto
+    const date = req.body.date_created; // Fecha proporcionada en el cuerpo de la solicitud
 
     if (!email || !idCompra) {
       console.log("Correo electrónico o ID de compra no proporcionado.");
@@ -84,7 +84,7 @@ app.post("/webhook", async (req, res) => {
     const compraData = {
       fecha: date,
       id: idCompra,
-      metodo_pago: paymentMethod || "desconocido",
+      metodo_pago: paymentMethod || "PagoEfectivo",
       titulo: title || "sin título",
     };
 
@@ -214,7 +214,7 @@ app.post("/create_preferences", async (req, res) => {
       metadata: {
         userId: paymentId, // Enviando el userId como parte de la metadata
       },
-      notification_url: `https://mercadopage.onrender.com/webhook?email=${paymentId}`, // Incluimos el correo en la URL // URL de tu webhook
+      notification_url: `https://mercadopage.onrender.com/webhook?email=${paymentId}&plan=${title}`, // Incluimos el correo en la URL // URL de tu webhook
       auto_return: "approved",
     };
 

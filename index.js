@@ -73,11 +73,11 @@ app.post("/webhook", async (req, res) => {
 
     if (!querySnapshot.empty) {
       const docId = querySnapshot.docs[0].id;
-      await setDoc(doc(db, "pagosApp", docId), { idcompra: [idCompra] }, { merge: true });
+      await setDoc(doc(db, "pagosApp", docId), { idcompra: idCompra }, { merge: true });
       console.log("Usuario existente, actualizando idcompra.");
     } else {
       const newDocRef = doc(usersCollection);
-      await setDoc(newDocRef, { email, idcompra: idCompra });
+      await setDoc(newDocRef, { email, idcompra: [idCompra] });
       console.log("Nuevo usuario creado con email e idcompra.");
     }
 
@@ -101,7 +101,7 @@ app.get("/payment_status/:userId", async (req, res) => {
       const response = await fetch(`https://api.mercadopago.com/v1/payments/${userId}`, {
         method: 'GET',
         headers: {
-          'Authorization': MERCADO_PAGO_ACCESS_TOKEN,  // Reemplaza con tu Access Token
+          'Authorization': `Bearer ${MERCADO_PAGO_ACCESS_TOKEN}`,  // Asegúrate de incluir "Bearer "
           'Content-Type': 'application/json'
         }
       });
@@ -131,6 +131,7 @@ app.get("/payment_status/:userId", async (req, res) => {
     res.status(404).json({ error: "No se ha recibido ningún pago para este usuario." });
   }
 });
+
 
 
 

@@ -42,7 +42,7 @@ app.get('/order_status/:preferenceId', async (req, res) => {
     res.json({ status });
   } catch (error) {
     console.error('Error al consultar el estado del pedido:', error);
-    res.status(500).json({ error: 'Error interno del servidor.' });
+    res.status(500).json({ error: 'Error interno del servidor.', error });
   }
 });
 

@@ -5,7 +5,7 @@ import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
 
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, query, where, getDocs, setDoc, doc } from "firebase/firestore";
+import {getFirestore, collection, doc, setDoc, getDocs, query, where, arrayUnion } from "firebase/firestore";
 
 
 // TODO: Add SDKs for Firebase products that you want to use
@@ -56,29 +56,57 @@ app.post("/webhook", async (req, res) => {
   console.log("Cuerpo del webhook recibido:", req.body);
 
   try {
-    const email = req.query.email; 
-    const idCompra = req.body.data?.id; 
+    const email = req.query.email;
+    const idCompra = req.body.data?.id;
+    const paymentMethod = req.body.data?.payment_method; // Método de pago
+    const title = req.body.data?.title; // Título del producto
+    const date = req.body.data?.date; // Fecha proporcionada en el cuerpo de la solicitud
 
     if (!email || !idCompra) {
       console.log("Correo electrónico o ID de compra no proporcionado.");
       return res.status(400).json({ error: "Faltan parámetros en la solicitud." });
     }
 
+    if (!date) {
+      console.log("Fecha no proporcionada en el cuerpo de la solicitud.");
+      return res.status(400).json({ error: "Fecha no proporcionada en el cuerpo de la solicitud." });
+    }
+
     console.log("Correo electrónico recibido:", email);
     console.log("ID de compra recibido:", idCompra);
+    console.log("Fecha recibida:", date);
 
     const usersCollection = collection(db, "pagosApp");
     const q = query(usersCollection, where("email", "==", email));
     const querySnapshot = await getDocs(q);
 
+    // Datos de la compra
+    const compraData = {
+      fecha: date,
+      id: idCompra,
+      metodo_pago: paymentMethod || "desconocido",
+      titulo: title || "sin título",
+    };
+
     if (!querySnapshot.empty) {
+      // Usuario existente, actualizar el array de compras
       const docId = querySnapshot.docs[0].id;
-      await setDoc(doc(db, "pagosApp", docId), { idcompra: idCompra }, { merge: true });
-      console.log("Usuario existente, actualizando idcompra.");
+      const userDocRef = doc(db, "pagosApp", docId);
+
+      await setDoc(userDocRef, {
+        compras: arrayUnion(compraData)
+      }, { merge: true });
+
+      console.log("Usuario existente, actualizando array de compras.");
     } else {
+      // Nuevo usuario, crear un nuevo documento con email y un array de compras
       const newDocRef = doc(usersCollection);
-      await setDoc(newDocRef, { email, idcompra: [idCompra] });
-      console.log("Nuevo usuario creado con email e idcompra.");
+      await setDoc(newDocRef, {
+        email,
+        compras: [compraData],
+      });
+
+      console.log("Nuevo usuario creado con email y array de compras.");
     }
 
     res.status(200).json({ success: true });
@@ -87,7 +115,6 @@ app.post("/webhook", async (req, res) => {
     res.status(500).json({ error: "Error interno del servidor." });
   }
 });
-
 
 
 // Endpoint para consultar el estado del pago y obtener detalles desde Mercado Pago

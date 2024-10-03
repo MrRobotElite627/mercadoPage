@@ -29,7 +29,7 @@ const db = getFirestore(appFirebase);
 
 // Configuración de Mercado Pago
 const MERCADO_PAGO_ACCESS_TOKEN =
-  "APP_USR-3542896227263654-090506-83b3e170d98a18c129d2045e6214045c-1978616648";
+  "APP_USR-4800771767205670-100318-b5830cdbf2f841d503721e9f92fa2e38-1609795587";
 const SUCCESS_URL = "https://www.codex.pe/success";
 const FAILURE_URL = "https://www.codex.pe/failure";
 const PENDING_URL = "https://www.codex.pe/pending";

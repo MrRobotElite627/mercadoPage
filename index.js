@@ -205,7 +205,6 @@ app.post("/create_preferences", async (req, res) => {
         excluded_payment_types: [
           { id: "credit_card" }, // Excluir tarjetas de crédito
           { id: "debit_card" }, // Excluir pagos en cajeros automáticos
-          { id: "ticket" } // Excluir pagos por ticket
         ],
       },
       payer: {
